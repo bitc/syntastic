@@ -14,25 +14,43 @@ if exists("loaded_haskell_syntax_checker")
 endif
 let loaded_haskell_syntax_checker = 1
 
-"bail if the user doesnt have ghc-mod installed
-if !executable("ghc-mod")
+if !exists('g:syntastic_haskell_checker_prog')
+  let g:syntastic_haskell_checker_prog = "ghc-mod"
+endif
+
+"bail if the user doesnt have an available tool installed
+if !executable(split(g:syntastic_haskell_checker_prog)[0])
     finish
 endif
 
 if !exists('g:syntastic_haskell_checker_args')
-    let g:syntastic_haskell_checker_args = '--hlintOpt="--language=XmlSyntax"'
+    if g:syntastic_haskell_checker_prog == "ghc-mod"
+        let g:syntastic_haskell_checker_args = '--hlintOpt="--language=XmlSyntax"'
+    else
+        let g:syntastic_haskell_checker_args = ''
+    endif
 endif
 
 function! SyntaxCheckers_haskell_GetLocList()
-    let ghcmod = 'ghc-mod ' . g:syntastic_haskell_checker_args
-    let makeprg =
-          \ "{ ".
-          \ ghcmod . " check ". shellescape(expand('%')) . "; " .
-          \ ghcmod . " lint " . shellescape(expand('%')) . ";" .
-          \ " }"
-    let errorformat = '%-G\\s%#,%f:%l:%c:%trror: %m,%f:%l:%c:%tarning: %m,'.
-                \ '%f:%l:%c: %trror: %m,%f:%l:%c: %tarning: %m,%f:%l:%c:%m,'.
-                \ '%E%f:%l:%c:,%Z%m,'
+    if g:syntastic_haskell_checker_prog == "ghc-mod"
+        let ghcmod = 'ghc-mod ' . g:syntastic_haskell_checker_args
+        let makeprg =
+              \ "{ ".
+              \ ghcmod . " check ". shellescape(expand('%')) . "; " .
+              \ ghcmod . " lint " . shellescape(expand('%')) . ";" .
+              \ " }"
+    else
+        let makeprg = g:syntastic_haskell_checker_prog . ' ' . g:syntastic_haskell_checker_args . ' ' . shellescape(expand('%'))
+    endif
+
+    let errorformat= '\%-Z\ %#,'.
+                    \ '%W%f:%l:%c:\ Warning:\ %m,'.
+                    \ '%E%f:%l:%c:\ %m,'.
+                    \ '%E%>%f:%l:%c:,'.
+                    \ '%+C\ \ %#%m,'.
+                    \ '%W%>%f:%l:%c:,'.
+                    \ '%+C\ \ %#%tarning:\ %m,'
+
 
     return SyntasticMake({ 'makeprg': makeprg, 'errorformat': errorformat })
 endfunction
