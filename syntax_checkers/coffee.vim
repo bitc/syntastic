@@ -19,13 +19,17 @@ if !executable("coffee")
     finish
 endif
 
+if !exists("g:syntastic_coffee_options")
+    let g:syntastic_coffee_options = "-l -o /tmp"
+endif
+
 if !exists('g:syntastic_coffee_lint_options')
     let g:syntastic_coffee_lint_options = ""
 endif
 
 
 function! SyntaxCheckers_coffee_GetLocList()
-    let makeprg = 'coffee -c -l -o /tmp '.shellescape(expand('%'))
+    let makeprg = 'coffee -c ' . g:syntastic_coffee_options . ' ' . shellescape(expand('%'))
     let errorformat =  'Syntax%trror: In %f\, %m on line %l,%EError: In %f\, Parse error on line %l: %m,%EError: In %f\, %m on line %l,%W%f(%l): lint warning: %m,%-Z%p^,%W%f(%l): warning: %m,%-Z%p^,%E%f(%l): SyntaxError: %m,%-Z%p^,%-G%.%#'
 
     let coffee_results = SyntasticMake({ 'makeprg': makeprg, 'errorformat': errorformat })
